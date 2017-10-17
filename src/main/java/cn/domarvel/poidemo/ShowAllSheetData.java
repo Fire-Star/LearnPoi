@@ -13,7 +13,7 @@ import java.io.InputStream;
 public class ShowAllSheetData {
     //遍历xls文件
     public static void main(String[] args) throws IOException {
-        InputStream inputStream = new FileInputStream("K:\\文件上传\\技术部人员.xls");
+        InputStream inputStream = new FileInputStream("K:\\文件上传\\POI学习测试数据\\技术部人员.xls");
         POIFSFileSystem fs = new POIFSFileSystem(inputStream);
         HSSFWorkbook wb = new HSSFWorkbook(fs);
         int sheetCount = wb.getNumberOfSheets();//包括隐藏的Sheet

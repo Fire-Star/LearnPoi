@@ -14,17 +14,17 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
   <dependencies>
-    <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <version>3.8.1</version>
-      <scope>test</scope>
-    </dependency>
+    <!-- 导入POI XSSF -->
     <dependency>
       <groupId>org.apache.poi</groupId>
-      <artifactId>poi</artifactId>
-      <version>3.13</version>
+      <artifactId>poi-ooxml</artifactId>
+      <version>3.16</version>
     </dependency>
+    <dependency>
+          <groupId>junit</groupId>
+          <artifactId>junit</artifactId>
+          <version>4.10</version>
+      </dependency>
   </dependencies>
   <build>
     <finalName>FinancialManager</finalName>
