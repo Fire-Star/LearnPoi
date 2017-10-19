@@ -21,8 +21,10 @@ import java.util.List;
  */
 public class ExcelUtils {
     private static SimpleDateFormat format = new SimpleDateFormat("yyyy/MM/dd");
+
     /**
      *
+     * 快速创建 Excel 表格
      * @param bathPath 要类似于这样的路径：c:/base/path/
      * @param fileName 随意
      * @param insertData 字符串List
@@ -30,18 +32,41 @@ public class ExcelUtils {
      * @param titleName 标题名数组
      * @param startX 整个表的起始位置X
      * @param startY 整个表的起始位置Y
+     * @param titleForegroundColor 标题前景色
+     * @param titleTextColor 标题字体颜色
+     * @param titleBorderColor 标题边框颜色
      * @throws Exception 异常
      */
-    public static void createExcel(String bathPath, String fileName, List<List<String>> insertData, String sheetName, String titleName[], int startX, int startY) throws Exception {
+    public static void createExcel(String bathPath, String fileName, List<List<String>> insertData, String sheetName, String titleName[], int startX, int startY , short titleForegroundColor,short titleTextColor,short titleBorderColor) throws Exception {
         XSSFWorkbook wb = new XSSFWorkbook();
         XSSFSheet sheet = wb.createSheet(sheetName);//创建表
 
 
         CellStyle cellStyle = wb.createCellStyle();
-        cellStyle.setBorderTop(BorderStyle.THIN);//设置标题细黑色边框
+        if( titleForegroundColor > -1 ){//如果有前景色就设置前景色，没有就是默认细黑色边框
+            cellStyle.setFillForegroundColor(titleForegroundColor);//设置前景色
+            cellStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+        }
+
+        //设置标题细边框
+        if(titleBorderColor > -1){//如果设置了边框颜色就设置边框颜色，否则就默认黑色边框
+            cellStyle.setTopBorderColor(titleBorderColor);
+            cellStyle.setBottomBorderColor(titleBorderColor);
+            cellStyle.setLeftBorderColor(titleBorderColor);
+            cellStyle.setRightBorderColor(titleBorderColor);
+        }
+        cellStyle.setBorderTop(BorderStyle.THIN);
         cellStyle.setBorderBottom(BorderStyle.THIN);
         cellStyle.setBorderLeft(BorderStyle.THIN);
         cellStyle.setBorderRight(BorderStyle.THIN);
+
+        if(titleTextColor > -1){
+            //设置文字颜色
+            Font font = wb.createFont();
+            font.setColor(titleTextColor);
+            cellStyle.setFont(font);
+        }
+
         cellStyle.setAlignment(HorizontalAlignment.CENTER);//让文本居中
 
         Row titleRow = sheet.createRow(startY);//创建标题行
@@ -94,6 +119,99 @@ public class ExcelUtils {
         } catch (Exception e) {
             throw new BaseException(StaticString.WARNING_TYPE,"生成的excel写入文件失败！");
         }
+    }
+
+    /**
+     *
+     * 快速创建默认 Excel 表格
+     * @param bathPath 要类似于这样的路径：c:/base/path/
+     * @param fileName 随意
+     * @param insertData 字符串List
+     * @param sheetName 要创建的sheetName
+     * @param titleName 标题名数组
+     * @param startX 整个表的起始位置X
+     * @param startY 整个表的起始位置Y
+     * @param titleTextColor 标题文字色
+     * @param titleBorderColor 标题边框色
+     * @throws Exception 异常
+     */
+    public static void createDefaultStyleExcel(String bathPath, String fileName, List<List<String>> insertData, String sheetName, String titleName[], int startX, int startY ,short titleTextColor, short titleBorderColor) throws Exception {
+        createExcel(bathPath,fileName,insertData,sheetName,titleName,startX,startY,(short)-1,titleTextColor,titleBorderColor);
+    }
+    /**
+     *
+     * 快速创建默认 Excel 表格
+     * @param bathPath 要类似于这样的路径：c:/base/path/
+     * @param fileName 随意
+     * @param insertData 字符串List
+     * @param sheetName 要创建的sheetName
+     * @param titleName 标题名数组
+     * @param startX 整个表的起始位置X
+     * @param startY 整个表的起始位置Y
+     * @throws Exception 异常
+     */
+    public static void createDefaultStyleExcel(String bathPath, String fileName, List<List<String>> insertData, String sheetName, String titleName[], int startX, int startY) throws Exception {
+        createExcel(bathPath,fileName,insertData,sheetName,titleName,startX,startY,(short)-1,(short)-1,(short)-1);
+    }
+
+    /**
+     *
+     * 快速创建默认 Excel 表格
+     * @param bathPath 要类似于这样的路径：c:/base/path/
+     * @param fileName 随意
+     * @param insertData 字符串List
+     * @param sheetName 要创建的sheetName
+     * @param titleName 标题名数组
+     * @throws Exception 异常
+     */
+    public static void createDefaultStyleExcel(String bathPath, String fileName, List<List<String>> insertData, String sheetName, String titleName[]) throws Exception {
+        createExcel(bathPath,fileName,insertData,sheetName,titleName,1,1,(short)-1,(short)-1,(short)-1);
+    }
+
+    /**
+     *
+     * 快速创建常用经典 Excel 表格
+     * @param bathPath 要类似于这样的路径：c:/base/path/
+     * @param fileName 随意
+     * @param insertData 字符串List
+     * @param sheetName 要创建的sheetName
+     * @param titleName 标题名数组
+     * @param startX 整个表的起始位置X
+     * @param startY 整个表的起始位置Y
+     * @param titleBorderColor 标题边框色
+     * @throws Exception 异常
+     */
+    public static void createClassicStyleExcel(String bathPath, String fileName, List<List<String>> insertData, String sheetName, String titleName[], int startX, int startY, short titleBorderColor) throws Exception {
+        createExcel(bathPath,fileName,insertData,sheetName,titleName,startX,startY,IndexedColors.LIGHT_BLUE.getIndex(), IndexedColors.WHITE.getIndex(),titleBorderColor);
+    }
+    /**
+     *
+     * 快速创建常用经典 Excel 表格
+     * @param bathPath 要类似于这样的路径：c:/base/path/
+     * @param fileName 随意
+     * @param insertData 字符串List
+     * @param sheetName 要创建的sheetName
+     * @param titleName 标题名数组
+     * @param startX 整个表的起始位置X
+     * @param startY 整个表的起始位置Y
+     * @throws Exception 异常
+     */
+    public static void createClassicStyleExcel(String bathPath, String fileName, List<List<String>> insertData, String sheetName, String titleName[], int startX, int startY) throws Exception {
+        createExcel(bathPath,fileName,insertData,sheetName,titleName,startX,startY,IndexedColors.LIGHT_BLUE.getIndex(), IndexedColors.WHITE.getIndex(),(short)-1);
+    }
+
+    /**
+     *
+     * 快速创建常用经典 Excel 表格
+     * @param bathPath 要类似于这样的路径：c:/base/path/
+     * @param fileName 随意
+     * @param insertData 字符串List
+     * @param sheetName 要创建的sheetName
+     * @param titleName 标题名数组
+     * @throws Exception 异常
+     */
+    public static void createClassicStyleExcel(String bathPath, String fileName, List<List<String>> insertData, String sheetName, String titleName[]) throws Exception {
+        createExcel(bathPath,fileName,insertData,sheetName,titleName,1,1,IndexedColors.LIGHT_BLUE.getIndex(), IndexedColors.WHITE.getIndex(),(short)-1);
     }
 
     /**
