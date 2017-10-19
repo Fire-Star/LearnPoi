@@ -66,6 +66,9 @@ public class ExcelUtils {
 
         OutputStream outputStream = new FileOutputStream(outPutPath+outPutFileName);
         wb.write(outputStream);//输出
+        sheetModel.close();
+        outputStream.close();
+        wb.close();
     }
 
     /**

@@ -71,6 +71,11 @@ public class SheetCreate {
         tempData02.add("杨舒粤");
         insertData.add(tempData02);
 
+        List<String> tempData03 = new LinkedList<>();
+        tempData03.add("FireLang");
+        tempData03.add("胡艺宝");
+        insertData.add(tempData03);
+
         ExcelUtils.createSheetByModel(new FileInputStream("K:\\文件上传\\模板.xlsx"),"K:\\文件上传\\","自动根据模板创建.xlsx",insertData,1,1);
     }
 }
