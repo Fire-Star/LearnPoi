@@ -6,6 +6,7 @@ import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 import java.io.FileOutputStream;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.text.SimpleDateFormat;
 import java.util.List;
@@ -21,12 +22,72 @@ import java.util.List;
  */
 public class ExcelUtils {
     private static SimpleDateFormat format = new SimpleDateFormat("yyyy/MM/dd");
+    private static int PIXEL = 620;
+
+    /**
+     * 根据 Excel模板 创建 Excel 表格
+     * 注意：标题必须为字符串或者其它，反正就是除了日期以外。
+     * @param sheetModel 模板
+     * @param outPutPath 表格创建成功后的输出路径
+     * @param outPutFileName 输出文件名
+     * @param insertData 插入数据
+     * @param dataStartY 数据开始行
+     * @param titleStartX 标题开始列的下标
+     * @param titleStartY 标题开始行的下标
+     * @throws Exception 异常
+     */
+    public static void createSheetByModel(InputStream sheetModel, String outPutPath, String outPutFileName, List<List<String>> insertData, int dataStartY,int titleStartX,int titleStartY) throws Exception {
+        XSSFWorkbook wb = new XSSFWorkbook(sheetModel);
+        Sheet sheet = wb.getSheetAt(0);//模板必须要有第一个Sheet。
+        if(sheet == null){
+            throw new BaseException(ErrorType.DANGER_TYPE,"模板不能为空！");
+        }
+        Row titleRow = sheet.getRow(titleStartY);//获得标题行
+        if(titleRow == null){
+            throw new BaseException(ErrorType.DANGER_TYPE,"模板不能没有标题行");
+        }
+        int tempCellCount = titleRow.getLastCellNum();
+        int allCellCount = tempCellCount - titleStartX;
+
+        //自动适应列宽
+        for (int tempCell = 0; tempCell < allCellCount; tempCell++) {
+            Cell cellObj = titleRow.getCell(tempCell+titleStartX);
+            int cellStrLen = getMaxLengthInColumn(insertData,tempCell);//取出数据中字符长度的最大值。
+            if(cellObj != null){
+                String cellTitleStr = cellObj.toString();
+                int len = cellTitleStr.length();
+                cellStrLen = cellStrLen < len ? len : cellStrLen;
+            }
+            System.out.println(cellStrLen);
+            sheet.setColumnWidth(tempCell + titleStartX,cellStrLen * PIXEL);
+        }
+
+        fillData(wb,sheet,insertData.size(),allCellCount,dataStartY,titleStartX,insertData);
+
+        OutputStream outputStream = new FileOutputStream(outPutPath+outPutFileName);
+        wb.write(outputStream);//输出
+    }
+
+    /**
+     * 根据 Excel模板 创建 Excel 表格
+     * 注意：标题必须为字符串或者其它，反正就是除了日期以外。
+     * @param sheetModel 模板
+     * @param outPutPath 表格创建成功后的输出路径
+     * @param outPutFileName 输出文件名
+     * @param insertData 插入数据
+     * @param titleStartX 标题开始列的下标
+     * @param titleStartY 标题开始行的下标
+     * @throws Exception 异常
+     */
+    public static void createSheetByModel(InputStream sheetModel, String outPutPath, String outPutFileName, List<List<String>> insertData,int titleStartX,int titleStartY) throws Exception {
+        createSheetByModel(sheetModel,outPutPath,outPutFileName,insertData,titleStartY+1,titleStartX,titleStartY);
+    }
 
     /**
      *
      * 快速创建 Excel 表格
-     * @param bathPath 要类似于这样的路径：c:/base/path/
-     * @param fileName 随意
+     * @param outPutBathPath 要类似于这样的路径：c:/base/path/
+     * @param outPutFileName 随意
      * @param insertData 字符串List
      * @param sheetName 要创建的sheetName
      * @param titleName 标题名数组
@@ -37,7 +98,7 @@ public class ExcelUtils {
      * @param titleBorderColor 标题边框颜色
      * @throws Exception 异常
      */
-    public static void createExcel(String bathPath, String fileName, List<List<String>> insertData, String sheetName, String titleName[], int startX, int startY , short titleForegroundColor,short titleTextColor,short titleBorderColor) throws Exception {
+    public static void createExcel(String outPutBathPath, String outPutFileName, List<List<String>> insertData, String sheetName, String titleName[], int startX, int startY , short titleForegroundColor,short titleTextColor,short titleBorderColor) throws Exception {
         XSSFWorkbook wb = new XSSFWorkbook();
         XSSFSheet sheet = wb.createSheet(sheetName);//创建表
 
@@ -85,12 +146,37 @@ public class ExcelUtils {
             int maxStrLen = getMaxLengthInColumn(insertData,i);
             maxStrLen = maxStrLen < tempTitle.length() ? tempTitle.length() : maxStrLen;
             System.out.println(maxStrLen);
-            sheet.setColumnWidth(startIndexColumn,520*maxStrLen);
+            sheet.setColumnWidth(startIndexColumn,PIXEL * maxStrLen);
         }
 
         int allCellCount = titleName.length;//一共有多少列,列按照标题来
         int startRowIndex = startY+1;//内容的起始行
         int allRow = insertData.size();//内容一共有多少行
+
+        fillData(wb,sheet,allRow,allCellCount,startRowIndex,startX,insertData);
+        try {
+
+            OutputStream outputStream = new FileOutputStream(outPutBathPath+outPutFileName);
+            wb.write(outputStream);
+            outputStream.close();
+            wb.close();
+
+        } catch (Exception e) {
+            throw new BaseException(ErrorType.WARNING_TYPE,"生成的excel写入文件失败！");
+        }
+    }
+
+    /**
+     *  将内容填充到 Excel 中
+     * @param wb 目标 Workbook
+     * @param sheet Excel 表
+     * @param allRow 数据一共有多少行
+     * @param allCellCount 数据一共有多少列
+     * @param startRowIndex 开始填充数据的行 index , index 从 0 开始
+     * @param startX 开始填充数据的列
+     * @param insertData 数据
+     */
+    public static void fillData(Workbook wb,Sheet sheet, int allRow, int allCellCount, int startRowIndex,int startX,List<List<String>> insertData){
 
         CellStyle tempCellStyle = wb.createCellStyle();
         tempCellStyle.setAlignment(HorizontalAlignment.CENTER);//让文本居中
@@ -109,23 +195,13 @@ public class ExcelUtils {
                 targetCell.setCellValue(tempData.get(cell));
             }
         }
-        try {
-
-            OutputStream outputStream = new FileOutputStream(bathPath+fileName);
-            wb.write(outputStream);
-            outputStream.close();
-            wb.close();
-
-        } catch (Exception e) {
-            throw new BaseException(StaticString.WARNING_TYPE,"生成的excel写入文件失败！");
-        }
     }
 
     /**
      *
      * 快速创建默认 Excel 表格
-     * @param bathPath 要类似于这样的路径：c:/base/path/
-     * @param fileName 随意
+     * @param outPutBathPath 要类似于这样的路径：c:/base/path/
+     * @param outPutFileName 随意
      * @param insertData 字符串List
      * @param sheetName 要创建的sheetName
      * @param titleName 标题名数组
@@ -135,14 +211,14 @@ public class ExcelUtils {
      * @param titleBorderColor 标题边框色
      * @throws Exception 异常
      */
-    public static void createDefaultStyleExcel(String bathPath, String fileName, List<List<String>> insertData, String sheetName, String titleName[], int startX, int startY ,short titleTextColor, short titleBorderColor) throws Exception {
-        createExcel(bathPath,fileName,insertData,sheetName,titleName,startX,startY,(short)-1,titleTextColor,titleBorderColor);
+    public static void createDefaultStyleExcel(String outPutBathPath, String outPutFileName, List<List<String>> insertData, String sheetName, String titleName[], int startX, int startY ,short titleTextColor, short titleBorderColor) throws Exception {
+        createExcel(outPutBathPath,outPutFileName,insertData,sheetName,titleName,startX,startY,(short)-1,titleTextColor,titleBorderColor);
     }
     /**
      *
      * 快速创建默认 Excel 表格
-     * @param bathPath 要类似于这样的路径：c:/base/path/
-     * @param fileName 随意
+     * @param outPutBathPath 要类似于这样的路径：c:/base/path/
+     * @param outPutFileName 随意
      * @param insertData 字符串List
      * @param sheetName 要创建的sheetName
      * @param titleName 标题名数组
@@ -150,29 +226,29 @@ public class ExcelUtils {
      * @param startY 整个表的起始位置Y
      * @throws Exception 异常
      */
-    public static void createDefaultStyleExcel(String bathPath, String fileName, List<List<String>> insertData, String sheetName, String titleName[], int startX, int startY) throws Exception {
-        createExcel(bathPath,fileName,insertData,sheetName,titleName,startX,startY,(short)-1,(short)-1,(short)-1);
+    public static void createDefaultStyleExcel(String outPutBathPath, String outPutFileName, List<List<String>> insertData, String sheetName, String titleName[], int startX, int startY) throws Exception {
+        createExcel(outPutBathPath,outPutFileName,insertData,sheetName,titleName,startX,startY,(short)-1,(short)-1,(short)-1);
     }
 
     /**
      *
      * 快速创建默认 Excel 表格
-     * @param bathPath 要类似于这样的路径：c:/base/path/
-     * @param fileName 随意
+     * @param outPutBathPath 要类似于这样的路径：c:/base/path/
+     * @param outPutFileName 随意
      * @param insertData 字符串List
      * @param sheetName 要创建的sheetName
      * @param titleName 标题名数组
      * @throws Exception 异常
      */
-    public static void createDefaultStyleExcel(String bathPath, String fileName, List<List<String>> insertData, String sheetName, String titleName[]) throws Exception {
-        createExcel(bathPath,fileName,insertData,sheetName,titleName,1,1,(short)-1,(short)-1,(short)-1);
+    public static void createDefaultStyleExcel(String outPutBathPath, String outPutFileName, List<List<String>> insertData, String sheetName, String titleName[]) throws Exception {
+        createExcel(outPutBathPath,outPutFileName,insertData,sheetName,titleName,1,1,(short)-1,(short)-1,(short)-1);
     }
 
     /**
      *
      * 快速创建常用经典 Excel 表格
-     * @param bathPath 要类似于这样的路径：c:/base/path/
-     * @param fileName 随意
+     * @param outPutBathPath 要类似于这样的路径：c:/base/path/
+     * @param outPutFileName 随意
      * @param insertData 字符串List
      * @param sheetName 要创建的sheetName
      * @param titleName 标题名数组
@@ -181,14 +257,14 @@ public class ExcelUtils {
      * @param titleBorderColor 标题边框色
      * @throws Exception 异常
      */
-    public static void createClassicStyleExcel(String bathPath, String fileName, List<List<String>> insertData, String sheetName, String titleName[], int startX, int startY, short titleBorderColor) throws Exception {
-        createExcel(bathPath,fileName,insertData,sheetName,titleName,startX,startY,IndexedColors.LIGHT_BLUE.getIndex(), IndexedColors.WHITE.getIndex(),titleBorderColor);
+    public static void createClassicStyleExcel(String outPutBathPath, String outPutFileName, List<List<String>> insertData, String sheetName, String titleName[], int startX, int startY, short titleBorderColor) throws Exception {
+        createExcel(outPutBathPath,outPutFileName,insertData,sheetName,titleName,startX,startY,IndexedColors.LIGHT_BLUE.getIndex(), IndexedColors.WHITE.getIndex(),titleBorderColor);
     }
     /**
      *
      * 快速创建常用经典 Excel 表格
-     * @param bathPath 要类似于这样的路径：c:/base/path/
-     * @param fileName 随意
+     * @param outPutBathPath 要类似于这样的路径：c:/base/path/
+     * @param outPutFileName 随意
      * @param insertData 字符串List
      * @param sheetName 要创建的sheetName
      * @param titleName 标题名数组
@@ -196,22 +272,22 @@ public class ExcelUtils {
      * @param startY 整个表的起始位置Y
      * @throws Exception 异常
      */
-    public static void createClassicStyleExcel(String bathPath, String fileName, List<List<String>> insertData, String sheetName, String titleName[], int startX, int startY) throws Exception {
-        createExcel(bathPath,fileName,insertData,sheetName,titleName,startX,startY,IndexedColors.LIGHT_BLUE.getIndex(), IndexedColors.WHITE.getIndex(),(short)-1);
+    public static void createClassicStyleExcel(String outPutBathPath, String outPutFileName, List<List<String>> insertData, String sheetName, String titleName[], int startX, int startY) throws Exception {
+        createExcel(outPutBathPath,outPutFileName,insertData,sheetName,titleName,startX,startY,IndexedColors.LIGHT_BLUE.getIndex(), IndexedColors.WHITE.getIndex(),(short)-1);
     }
 
     /**
      *
      * 快速创建常用经典 Excel 表格
-     * @param bathPath 要类似于这样的路径：c:/base/path/
-     * @param fileName 随意
+     * @param outPutBathPath 要类似于这样的路径：c:/base/path/
+     * @param outPutFileName 随意
      * @param insertData 字符串List
      * @param sheetName 要创建的sheetName
      * @param titleName 标题名数组
      * @throws Exception 异常
      */
-    public static void createClassicStyleExcel(String bathPath, String fileName, List<List<String>> insertData, String sheetName, String titleName[]) throws Exception {
-        createExcel(bathPath,fileName,insertData,sheetName,titleName,1,1,IndexedColors.LIGHT_BLUE.getIndex(), IndexedColors.WHITE.getIndex(),(short)-1);
+    public static void createClassicStyleExcel(String outPutBathPath, String outPutFileName, List<List<String>> insertData, String sheetName, String titleName[]) throws Exception {
+        createExcel(outPutBathPath,outPutFileName,insertData,sheetName,titleName,1,1,IndexedColors.LIGHT_BLUE.getIndex(), IndexedColors.WHITE.getIndex(),(short)-1);
     }
 
     /**
@@ -222,7 +298,15 @@ public class ExcelUtils {
      */
     public static int getMaxLengthInColumn(List<List<String>> data ,int column){
         int max = 0;
+
+        if(data == null){//如果没有数据就返回0
+            return max;
+        }
+
         for (List<String> tempData : data) {
+            if(tempData == null){//如果没有当前行数据就遍历下一行
+                continue;
+            }
             if(tempData.size() <= column){
                 continue;
             }
@@ -230,10 +314,31 @@ public class ExcelUtils {
             if(tempStr == null){
                 continue;
             }
-            int tempLen = tempStr.length();
+            int tempLen = getExcelStrLen(tempStr);
             max = max < tempLen ? tempLen : max;
         }
         return max;
+    }
+
+    /**
+     *  计算 Excel 中需要的长度，全是中文字符就返回中文字符串的长度，全是英文字符就返回英文字符长度的一半
+     * @param tempStr 要被计算的字符串
+     * @return 被计算后的长度
+     */
+    private static int getExcelStrLen(String tempStr) {
+        int allCount = 0;
+        String regex = "[\\x00-\\x7F]";
+        int len = tempStr.length();
+        int enCount = 0;
+        for (int i = 0; i < len; i++) {
+            String tempCharAt = String.valueOf(tempStr.charAt(i));
+            if(tempCharAt.matches(regex)){
+                enCount++;
+            }
+        }
+        int chCount = len - enCount;
+        allCount = enCount / 2 + chCount;
+        return allCount;
     }
 
     /**

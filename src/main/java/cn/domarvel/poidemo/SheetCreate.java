@@ -6,9 +6,7 @@ import org.apache.poi.ss.usermodel.Workbook;
 import org.junit.Rule;
 import org.junit.Test;
 
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
+import java.io.*;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -37,12 +35,13 @@ public class SheetCreate {
         tempData02.add("在路途中，少年遇到了 Joy 并且深深深深的爱上了她！");
         insertData.add(tempData02);
 
-        ExcelUtils.createExcel("K:\\文件上传\\","简介.xlsx",insertData,"简介",title,1,1,(short)-1,(short)-1);
+        ExcelUtils.createExcel("K:\\文件上传\\","简介.xlsx",insertData,"简介",title,1,1,(short)-1,(short)-1,(short)-1);
     }
 
     @Test
     public void createClassicStyleSheet() throws Exception {
         String []title = {"姓名","简介"};
+
         List<List<String>> insertData = new LinkedList<>();
 
         List<String> tempData01 = new LinkedList<>();
@@ -56,5 +55,22 @@ public class SheetCreate {
         insertData.add(tempData02);
 
         ExcelUtils.createClassicStyleExcel("K:\\文件上传\\","常用经典样式.xlsx",insertData,"常用经典样式",title);
+    }
+
+    @Test
+    public void createSheetByModelTest() throws Exception {
+        List<List<String>> insertData = new LinkedList<>();
+
+        List<String> tempData01 = new LinkedList<>();
+        tempData01.add("MoonFollow");
+        tempData01.add("胡艺宝");
+        insertData.add(tempData01);
+
+        List<String> tempData02 = new LinkedList<>();
+        tempData02.add("Joy");
+        tempData02.add("杨舒粤");
+        insertData.add(tempData02);
+
+        ExcelUtils.createSheetByModel(new FileInputStream("K:\\文件上传\\模板.xlsx"),"K:\\文件上传\\","自动根据模板创建.xlsx",insertData,1,1);
     }
 }
